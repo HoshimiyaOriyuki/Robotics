@@ -12,10 +12,10 @@ import sys
 
 # Config
 
-drive_motor = Motor(Port.A)
+drive_motor = Motor(Port.B)
 
-left_motor = Motor(Port.C)
-right_motor = Motor(Port.B)
+left_motor = Motor(Port.D)
+right_motor = Motor(Port.C)
 
 front_ultra = UltrasonicSensor(Port.S1)
 right_ultra = UltrasonicSensor(Port.S3)
@@ -35,21 +35,53 @@ def align():
   right_motor.reset_angle(0)
 
 
+def left(turn_speed, angle):
+  left_motor.run_target(turn_speed, angle)
+
+
+def right(turn_speed, angle):
+  right_motor.run_target(turn_speed, angle)
+
+
 def turn(turn_speed, angle):
-  t1 = Thread(target=left_motor.run_target(turn_speed, angle))
-  t2 = Thread(target=right_motor.run_target(turn_speed, angle))
+  t1 = Thread(target=left, args=(turn_speed, angle,))
+  t2 = Thread(target=right, args=(turn_speed, angle,))
 
   t1.start()
   t2.start()
 
-def steering(turn_speed, angle, forward_speed):
+
+def steering(turn_speed, angle):
   turn(turn_speed, angle)
 
-  drive_motor.run(forward_speed)
+
+def clamp(num, min_val, max_val):
+  return max(min(num, min_val), max_val)
+
+def turn_calc(dist, offset, multiplier):
+  return clamp((dist - offset) * multiplier, -30, 30)
+
+def forwardMovement(speed):
+  while(front_ultra.distance() >= 160):
+    drive_motor.run(speed)
+
+  if(front_ultra.distance() <= 152  and right_ultra.distance() >= 45):
+    while(front_ultra.distance()>= 130 and front_ultra.distance< right_ultra.distance()):
+      steering(5000, 45)
+      drive_motor.run(speed)
+      if(right_ultra.distance() <60):
+        while(right_ultra.distance() <60):
+          steering(360, -20)
+      
+      
+
+  elif(front_ultra.distance() <120 & right_ultra.distance() ):
+    drive_motor.stop()
+
+
 
 
 align()
 
-while True:
-  steering(5000, 35, 0)
-  break
+forwardMovement(5000)
+
